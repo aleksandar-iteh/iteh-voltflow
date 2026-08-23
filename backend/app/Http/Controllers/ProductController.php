@@ -8,11 +8,17 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use RuntimeException;
+use Throwable;
 
 class ProductController extends Controller
 {
+    private const IMAGE_DIRECTORY = 'products';
+
     private const SORTABLE_FIELDS = [
         'name',
         'price',
@@ -92,9 +98,23 @@ class ProductController extends Controller
     {
         $this->ensureAdmin($request);
 
-        $product = Product::query()->create(
-            $request->validate($this->storeRules())
-        );
+        $validated = $request->validate($this->storeRules());
+        $productData = Arr::except($validated, ['image', 'image_url']);
+        $storedImagePath = null;
+
+        if ($request->hasFile('image')) {
+            [$productData['image_url'], $storedImagePath] = $this->storeUploadedImage($request);
+        }
+
+        try {
+            $product = Product::query()->create($productData);
+        } catch (Throwable $exception) {
+            if ($storedImagePath !== null) {
+                Storage::disk('public')->delete($storedImagePath);
+            }
+
+            throw $exception;
+        }
 
         return response()->json([
             'message' => 'Product created successfully.',
@@ -117,9 +137,28 @@ class ProductController extends Controller
     {
         $this->ensureAdmin($request);
 
-        $product->update(
-            $request->validate($this->updateRules($product))
-        );
+        $validated = $request->validate($this->updateRules($product));
+        $updates = Arr::except($validated, ['image', 'image_url']);
+        $storedImagePath = null;
+        $oldImageUrl = $product->image_url;
+
+        if ($request->hasFile('image')) {
+            [$updates['image_url'], $storedImagePath] = $this->storeUploadedImage($request);
+        }
+
+        try {
+            $product->update($updates);
+        } catch (Throwable $exception) {
+            if ($storedImagePath !== null) {
+                Storage::disk('public')->delete($storedImagePath);
+            }
+
+            throw $exception;
+        }
+
+        if ($storedImagePath !== null) {
+            $this->deleteLocalImage($oldImageUrl);
+        }
 
         return response()->json([
             'message' => 'Product updated successfully.',
@@ -134,23 +173,38 @@ class ProductController extends Controller
     {
         $this->ensureAdmin($request);
 
-        return DB::transaction(function () use ($product): JsonResponse {
+        $result = DB::transaction(function () use ($product): array {
             $lockedProduct = Product::query()
                 ->lockForUpdate()
                 ->findOrFail($product->id);
 
             if ($lockedProduct->orderItems()->exists()) {
-                return response()->json([
-                    'message' => 'A product with existing orders cannot be deleted.',
-                ], 409);
+                return [
+                    'deleted' => false,
+                    'image_url' => null,
+                ];
             }
 
+            $imageUrl = $lockedProduct->image_url;
             $lockedProduct->delete();
 
-            return response()->json([
-                'message' => 'Product deleted successfully.',
-            ]);
+            return [
+                'deleted' => true,
+                'image_url' => $imageUrl,
+            ];
         });
+
+        if (! $result['deleted']) {
+            return response()->json([
+                'message' => 'A product with existing orders cannot be deleted.',
+            ], 409);
+        }
+
+        $this->deleteLocalImage($result['image_url']);
+
+        return response()->json([
+            'message' => 'Product deleted successfully.',
+        ]);
     }
 
     /**
@@ -163,7 +217,14 @@ class ProductController extends Controller
             'description' => ['sometimes', 'nullable', 'string'],
             'price' => ['required', 'numeric', 'min:0'],
             'stock_quantity' => ['required', 'integer', 'min:0'],
-            'image_url' => ['sometimes', 'nullable', 'url:http,https', 'max:255'],
+            'image' => [
+                'sometimes',
+                'required',
+                'image',
+                'mimes:jpg,jpeg,png,webp',
+                'max:5120',
+            ],
+            'image_url' => ['prohibited'],
         ];
     }
 
@@ -183,8 +244,62 @@ class ProductController extends Controller
             'description' => ['sometimes', 'nullable', 'string'],
             'price' => ['sometimes', 'required', 'numeric', 'min:0'],
             'stock_quantity' => ['sometimes', 'required', 'integer', 'min:0'],
-            'image_url' => ['sometimes', 'nullable', 'url:http,https', 'max:255'],
+            'image' => [
+                'sometimes',
+                'required',
+                'image',
+                'mimes:jpg,jpeg,png,webp',
+                'max:5120',
+            ],
+            'image_url' => ['prohibited'],
         ];
+    }
+
+    /**
+     * @return array{0: string, 1: string}
+     */
+    private function storeUploadedImage(Request $request): array
+    {
+        $path = $request->file('image')?->store(self::IMAGE_DIRECTORY, 'public');
+
+        if (! is_string($path)) {
+            throw new RuntimeException('Image upload failed.');
+        }
+
+        return [Storage::disk('public')->url($path), $path];
+    }
+
+    private function deleteLocalImage(?string $imageUrl): void
+    {
+        if ($imageUrl === null) {
+            return;
+        }
+
+        $urlHost = parse_url($imageUrl, PHP_URL_HOST);
+        $appHost = parse_url((string) config('app.url'), PHP_URL_HOST);
+
+        if (
+            is_string($urlHost)
+            && $urlHost !== ''
+            && (! is_string($appHost) || strcasecmp($urlHost, $appHost) !== 0)
+        ) {
+            return;
+        }
+
+        $urlPath = parse_url($imageUrl, PHP_URL_PATH);
+        $publicStoragePrefix = '/storage/';
+
+        if (! is_string($urlPath) || ! str_starts_with($urlPath, $publicStoragePrefix)) {
+            return;
+        }
+
+        $storagePath = ltrim(substr($urlPath, strlen($publicStoragePrefix)), '/');
+
+        if (! str_starts_with($storagePath, self::IMAGE_DIRECTORY.'/')) {
+            return;
+        }
+
+        Storage::disk('public')->delete($storagePath);
     }
 
     private function ensureAdmin(Request $request): void
