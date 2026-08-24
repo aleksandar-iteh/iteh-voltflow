@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context';
+import { useCartStore } from '../../stores';
 
 interface NavigationItem {
   label: string;
@@ -21,6 +22,9 @@ const userNavigation: NavigationItem[] = [
 
 export function Navbar() {
   const { user, isAuthenticated, isAdmin, isLoading, logout } = useAuth();
+  const cartItemCount = useCartStore((state) =>
+    state.items.reduce((total, item) => total + item.quantity, 0),
+  );
   const navigate = useNavigate();
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -97,7 +101,12 @@ export function Navbar() {
 
         <nav className='hidden items-center gap-1 md:flex' aria-label='Main navigation'>
           {navigationItems.map((item) => (
-            <NavigationLink key={item.to} item={item} onClick={closeMenus} />
+            <NavigationLink
+              key={item.to}
+              item={item}
+              onClick={closeMenus}
+              badge={item.to === '/cart' ? cartItemCount : undefined}
+            />
           ))}
         </nav>
 
@@ -196,6 +205,7 @@ export function Navbar() {
               key={item.to}
               item={item}
               onClick={closeMenus}
+              badge={item.to === '/cart' ? cartItemCount : undefined}
               mobile
             />
           ))}
@@ -250,10 +260,12 @@ export function Navbar() {
 function NavigationLink({
   item,
   mobile = false,
+  badge,
   onClick,
 }: {
   item: NavigationItem;
   mobile?: boolean;
+  badge?: number;
   onClick: () => void;
 }) {
   return (
@@ -271,7 +283,17 @@ function NavigationLink({
         ].join(' ')
       }
     >
-      {item.label}
+      <span className='inline-flex items-center gap-2'>
+        {item.label}
+        {badge !== undefined && badge > 0 && (
+          <span
+            className='inline-flex min-w-5 items-center justify-center rounded-full bg-teal-600 px-1.5 py-0.5 text-xs font-bold text-white'
+            aria-label={`${badge} cart items`}
+          >
+            {badge > 99 ? '99+' : badge}
+          </span>
+        )}
+      </span>
     </NavLink>
   );
 }
