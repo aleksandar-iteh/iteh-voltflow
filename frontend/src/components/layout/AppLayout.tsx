@@ -2,6 +2,7 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context';
 import { Footer } from './Footer';
 import { Navbar } from './Navbar';
+import { ScrollToTop } from './ScrollToTop';
 
 export function AppLayout() {
   const { isAdmin } = useAuth();
@@ -15,6 +16,7 @@ export function AppLayout() {
 
   return (
     <div className='flex min-h-screen flex-col bg-teal-50'>
+      <ScrollToTop />
       <Navbar />
       <main
         id='main-content'
