@@ -67,7 +67,7 @@ export function Navbar() {
   };
 
   return (
-    <header className='sticky top-0 z-50 border-b border-teal-100 bg-white shadow-sm'>
+    <header className='sticky top-0 z-40 border-b border-teal-100 bg-white shadow-sm'>
       <a
         href='#main-content'
         className='sr-only z-50 rounded-md bg-teal-700 px-4 py-2 text-white focus:not-sr-only focus:absolute focus:left-4 focus:top-4'

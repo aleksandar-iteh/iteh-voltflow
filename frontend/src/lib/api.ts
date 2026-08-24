@@ -1,4 +1,5 @@
 import { getStoredToken } from './authStorage';
+import { withGlobalLoading } from '../stores/useLoadingStore';
 import type { ValidationErrors } from '../types/api';
 
 type QueryValue = string | number | boolean | null | undefined;
@@ -32,6 +33,13 @@ export class ApiError extends Error {
 export async function apiRequest<T>(
   path: string,
   options: ApiRequestOptions = {},
+): Promise<T> {
+  return withGlobalLoading(() => performApiRequest<T>(path, options));
+}
+
+async function performApiRequest<T>(
+  path: string,
+  options: ApiRequestOptions,
 ): Promise<T> {
   const { body, headers: providedHeaders, query, ...requestOptions } = options;
   const headers = new Headers(providedHeaders);
