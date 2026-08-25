@@ -23,26 +23,35 @@ const Profile = () => {
   const error = useOrderStore((state) => state.error);
   const fetchOrders = useOrderStore((state) => state.fetchOrders);
   const clearError = useOrderStore((state) => state.clearError);
-  const requestedUserId = useRef<number | null>(null);
+  const ordersRequestRef = useRef<{
+    userId: number;
+    request: Promise<Order[]>;
+  } | null>(null);
   const ordersSectionRef = useRef<HTMLElement>(null);
   const [loadedUserId, setLoadedUserId] = useState<number | null>(null);
 
   useEffect(() => {
-    if (!user || requestedUserId.current === user.id) {
+    if (!user) {
       return clearError;
     }
 
-    requestedUserId.current = user.id;
     let isActive = true;
+    const existingRequest = ordersRequestRef.current;
+    const request =
+      existingRequest?.userId === user.id
+        ? existingRequest.request
+        : fetchOrders({
+            status: undefined,
+            user_id: undefined,
+            sort_by: 'created_at',
+            sort_direction: 'desc',
+            per_page: ORDERS_PER_PAGE,
+            page: 1,
+          });
 
-    void fetchOrders({
-      status: undefined,
-      user_id: undefined,
-      sort_by: 'created_at',
-      sort_direction: 'desc',
-      per_page: ORDERS_PER_PAGE,
-      page: 1,
-    })
+    ordersRequestRef.current = { userId: user.id, request };
+
+    void request
       .catch(() => undefined)
       .finally(() => {
         if (isActive) {
