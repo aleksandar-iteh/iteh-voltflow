@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ProductImage } from '../components/products';
+import { OrderLocationMap } from '../components/orders';
 import { useAuth } from '../context';
 import { formatPrice } from '../lib/formatters';
 import { useOrderStore } from '../stores';
@@ -227,6 +228,8 @@ const Order = () => {
               </span>
             </div>
           </section>
+
+          <OrderLocationMap address={order.shipping_address} />
         </div>
 
         <aside className='space-y-6 lg:sticky lg:top-24'>
