@@ -1,3 +1,4 @@
+export { adminOverviewApi } from './adminOverviewApi';
 export { adminUserApi } from './adminUserApi';
 export { authApi } from './authApi';
 export { orderApi } from './orderApi';

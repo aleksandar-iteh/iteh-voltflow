@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminOverviewController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\OrderController;
@@ -18,6 +19,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::get('/user', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
 
+    Route::get('/admin/overview', [AdminOverviewController::class, 'show']);
     Route::get('/admin/users', [AdminUserController::class, 'index']);
 
     Route::apiResource('products', ProductController::class)->only([

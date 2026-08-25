@@ -24,6 +24,31 @@ export interface AdminUser extends User {
   orders_count: number;
 }
 
+export interface AdminOverviewSummary {
+  customers: number;
+  products: number;
+  orders: number;
+  revenue: number;
+}
+
+export interface OrdersByStatusDatum {
+  status: OrderStatus;
+  count: number;
+}
+
+export interface RevenueOverTimeDatum {
+  date: string;
+  label: string;
+  orders: number;
+  revenue: number;
+}
+
+export interface AdminOverviewData {
+  summary: AdminOverviewSummary;
+  orders_by_status: OrdersByStatusDatum[];
+  revenue_over_time: RevenueOverTimeDatum[];
+}
+
 export interface Product {
   id: number;
   name: string;
