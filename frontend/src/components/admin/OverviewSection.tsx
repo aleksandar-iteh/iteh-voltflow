@@ -1,9 +1,18 @@
-import { useEffect, useRef } from 'react';
-import { useAdminOverviewStore } from '../../stores';
+import { lazy, Suspense, useEffect, useRef } from 'react';
+import { useAdminOverviewStore, useLoadingStore } from '../../stores';
 import { AdminOverviewSummary } from './AdminOverviewSummary';
 import { AdminSectionShell } from './AdminSectionShell';
-import { OrdersByStatusChart } from './OrdersByStatusChart';
-import { RevenueTrendChart } from './RevenueTrendChart';
+
+const OrdersByStatusChart = lazy(() =>
+  import('./OrdersByStatusChart').then((module) => ({
+    default: module.OrdersByStatusChart,
+  })),
+);
+const RevenueTrendChart = lazy(() =>
+  import('./RevenueTrendChart').then((module) => ({
+    default: module.RevenueTrendChart,
+  })),
+);
 
 export function OverviewSection() {
   const overview = useAdminOverviewStore((state) => state.overview);
@@ -50,10 +59,12 @@ export function OverviewSection() {
         {!error && overview && (
           <>
             <AdminOverviewSummary summary={overview.summary} />
-            <div className='mt-6 grid gap-6 lg:grid-cols-3'>
-              <RevenueTrendChart data={overview.revenue_over_time} />
-              <OrdersByStatusChart data={overview.orders_by_status} />
-            </div>
+            <Suspense fallback={<ChartLoadingFallback />}>
+              <div className='mt-6 grid gap-6 lg:grid-cols-3'>
+                <RevenueTrendChart data={overview.revenue_over_time} />
+                <OrdersByStatusChart data={overview.orders_by_status} />
+              </div>
+            </Suspense>
           </>
         )}
 
@@ -61,6 +72,19 @@ export function OverviewSection() {
       </div>
     </AdminSectionShell>
   );
+}
+
+function ChartLoadingFallback() {
+  const startLoading = useLoadingStore((state) => state.startLoading);
+  const stopLoading = useLoadingStore((state) => state.stopLoading);
+
+  useEffect(() => {
+    startLoading();
+
+    return stopLoading;
+  }, [startLoading, stopLoading]);
+
+  return <div className='min-h-80' aria-busy='true' />;
 }
 
 function OverviewIcon() {
