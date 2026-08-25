@@ -146,7 +146,7 @@ const Order = () => {
       >
         <Link
           className='font-medium transition hover:text-teal-700'
-          to={isAdmin ? '/admin' : '/'}
+          to={isAdmin ? '/admin?section=orders' : '/'}
         >
           {isAdmin ? 'Admin' : 'Home'}
         </Link>
@@ -534,7 +534,7 @@ function OrderUnavailable({
           </button>
         )}
         <Link
-          to={isAdmin ? '/admin' : '/'}
+          to={isAdmin ? '/admin?section=orders' : '/'}
           className='rounded-xl bg-teal-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-teal-700'
         >
           {isAdmin ? 'Back to admin' : 'Back to home'}
