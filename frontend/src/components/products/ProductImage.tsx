@@ -4,9 +4,14 @@ import type { Product } from '../../types/models';
 interface ProductImageProps {
   product: Pick<Product, 'name' | 'image_url'>;
   className?: string;
+  imageClassName?: string;
 }
 
-export function ProductImage({ product, className = '' }: ProductImageProps) {
+export function ProductImage({
+  product,
+  className = '',
+  imageClassName = 'p-6',
+}: ProductImageProps) {
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
   const canShowImage = product.image_url && failedUrl !== product.image_url;
 
@@ -19,7 +24,7 @@ export function ProductImage({ product, className = '' }: ProductImageProps) {
           src={product.image_url ?? undefined}
           alt={product.name}
           onError={() => setFailedUrl(product.image_url)}
-          className='h-full w-full object-contain p-6 transition duration-300 group-hover:scale-105'
+          className={`h-full w-full object-contain transition duration-300 group-hover:scale-105 ${imageClassName}`}
         />
       ) : (
         <div className='flex flex-col items-center gap-3 text-teal-300'>

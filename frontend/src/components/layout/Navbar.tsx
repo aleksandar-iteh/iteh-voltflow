@@ -17,7 +17,6 @@ const publicNavigation: NavigationItem[] = [
 const userNavigation: NavigationItem[] = [
   ...publicNavigation,
   { label: 'Cart', to: '/cart' },
-  { label: 'Checkout', to: '/checkout' },
 ];
 
 export function Navbar() {
