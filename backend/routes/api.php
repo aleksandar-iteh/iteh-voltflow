@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProductController;
@@ -16,6 +17,8 @@ Route::apiResource('products', ProductController::class)->only([
 Route::middleware('auth:sanctum')->group(function (): void {
     Route::get('/user', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
+
+    Route::get('/admin/users', [AdminUserController::class, 'index']);
 
     Route::apiResource('products', ProductController::class)->only([
         'store',

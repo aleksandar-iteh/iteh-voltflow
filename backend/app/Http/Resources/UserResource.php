@@ -20,6 +20,7 @@ class UserResource extends JsonResource
             'email' => $this->email,
             'role' => $this->role,
             'email_verified_at' => $this->email_verified_at?->toISOString(),
+            'orders_count' => $this->whenCounted('orders'),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
         ];

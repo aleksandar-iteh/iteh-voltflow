@@ -6,6 +6,7 @@ interface AdminSectionShellProps {
   title: string;
   description: string;
   icon: ReactNode;
+  children?: ReactNode;
 }
 
 export function AdminSectionShell({
@@ -13,6 +14,7 @@ export function AdminSectionShell({
   title,
   description,
   icon,
+  children,
 }: AdminSectionShellProps) {
   return (
     <section
@@ -32,11 +34,13 @@ export function AdminSectionShell({
         </div>
       </div>
 
-      <div className='mt-8 rounded-2xl border border-dashed border-teal-200 bg-teal-50 px-6 py-12 text-center'>
-        <p className='text-sm font-semibold text-teal-800'>
-          The {title.toLowerCase()} section is ready for implementation.
-        </p>
-      </div>
+      {children ?? (
+        <div className='mt-8 rounded-2xl border border-dashed border-teal-200 bg-teal-50 px-6 py-12 text-center'>
+          <p className='text-sm font-semibold text-teal-800'>
+            The {title.toLowerCase()} section is ready for implementation.
+          </p>
+        </div>
+      )}
     </section>
   );
 }

@@ -20,6 +20,10 @@ export interface User {
   updated_at: string | null;
 }
 
+export interface AdminUser extends User {
+  orders_count: number;
+}
+
 export interface Product {
   id: number;
   name: string;
